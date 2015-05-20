@@ -1,0 +1,371 @@
+---
+title: 'Représentation et traitement de l''information géographique avec R : usage
+avancé'
+author: "Timothée Giraud & Nicolas Lambert"
+date: "21 mai 2015"
+output:
+    html_document:
+        number_sections: yes
+        theme: cerulean
+        toc: yes
+encoding: UTF-8
+---
+
+# Utilisation d'API de Cartographie
+
+## Affichage de fonds de carte statiques
+
+### Google Maps
+#### Le package `ggmap`
+
+Nous utilisons ici le package `ggmap` (reposant lui même sur `ggplot2`).
+Ce package permet notamment, via la fonction `get_map`, de télécharger différents fonds de cartes issus de Google Map au format raster.  
+
+Dans ce premier exemple nous téléchargeons la photo aérienne de la zone autour de l'EHESS.
+```{r, cache=FALSE}
+library(ggmap)
+# téléchargement de la carte
+mapImageData1 <- get_map(location = c(lon = 2.372199, lat = 48.836016),
+                         color = "color",
+                         source = "google",
+                         maptype = "satellite",
+                         zoom = 17)
+# affichage de la carte
+ggmap(mapImageData1,
+      extent = "device",
+      ylab = "Latitude",
+      xlab = "Longitude")
+```
+
+Dans ce deuxième exemple nous téléchargeons le réseau routier autour de la même zone.    
+
+```{r, cache=TRUE}
+# téléchargement de la carte
+mapImageData2 <- get_map(location = c(lon = 2.372199, lat = 48.836016),
+                         color = "color",
+                         source = "google",
+                         maptype = "roadmap",
+                         zoom = 17)
+# affichage de la carte
+ggmap(mapImageData2,
+      extent = "device",
+      ylab = "Latitude",
+      xlab = "Longitude")
+```
+
+
+Il est ensuite possible de rajouter n'importe quelle information sur la carte téléchargée.  
+Ici, nous rajoutons simplement un symbol sur le batiment de l'EHESS. L'utilisation de fonds de carte via `ggmap` implique l'utilisation de `ggplot2` si l'on veut rajouter des informations.
+
+```{r, cache=TRUE}
+# affichage de la carte et d'un point sur l'EHESS
+library(ggplot2)
+d <- data.frame(lat=48.836016, lon=2.372199, text ="EHESS")
+p <- ggmap(mapImageData2)
+p <- p + geom_point(data=d, aes(x=lon, y=lat), color="red", size=8, alpha=1) 
+p + annotate("text", x = 2.372199, y = 48.836016, label = "EHESS", col = "blue")
+```
+
+
+#### Le package `RgoogleMaps`
+
+Cet autre package, `RgoogleMaps`, permet de télécharger des fonds de carte vectoriel.
+Le fichier de la carte raster peut être sauvegardé.  
+On peut aussi ajouter des objets géographiques (points, lignes, surfaces) sur la carte.  
+
+```{r, cache=TRUE}
+library(RgoogleMaps)
+# création des marqueurs
+markers = paste0("&markers=color:blue|label:E|48.836016,2.372199")
+# téléchargement de la carte
+MyMap <- GetMap(center = c(48.836016,2.372199), zoom = 17, markers=markers,
+                destfile = "MyTile1.png")
+# affichage de la carte
+PlotOnStaticMap(MyMap)
+```
+
+
+
+
+### Open Street Maps
+Il est aussi possible de télécharger des cartes OpenStreetMap, via le package `OpenStreetMap`. Ce package présente un léger désavantage, il dépend de 4 autres packages (`rJava, raster, sp et rgdal`).
+Une multitude de style de cartes sont disponible en plus de celles fournies par OpenStreetMap (voir `?openmap`).   
+Les style de maps sont disponibles de façon différenciée en fonction de la zone géographique cartographiée.
+
+Ce premier exemple utilise un fond OSM classique.  
+
+```{r, cache=FALSE}
+library(OpenStreetMap)
+# téléchargement de la carte
+osmEHESS <- openmap(upperLeft = c(48.83812,2.368387), 
+                    lowerRight = c(48.8336, 2.375254), 
+                    type = "osm")
+# affichage de la carte
+plot(osmEHESS)
+# les cartes utilisent la projection mercator, il faut donc reprojeter 
+# les points à afficher dans cette projection
+EHESS <- projectMercator(lat = 48.836016, long = 2.372199)
+points(x = EHESS[1], y = EHESS[2], col = 'grey60', bg = "#920000", 
+       pch = 21, cex = 3)
+text(x = EHESS[1], y = EHESS[2], col = "blue", font = 2, labels = "EHESS", 
+     adj = c(0,-1.25))
+
+```
+
+Le deuxième exemple utilise un fond plus original ("stamen-toner").  
+```{r, cache=TRUE}
+# téléchargement de la carte
+osmEHESS <- openmap(upperLeft = c(48.83812,2.368387), 
+                    lowerRight = c(48.8336, 2.375254), 
+                    type = "stamen-toner")
+# affichage de la carte
+plot(osmEHESS)
+points(x = EHESS[1], y = EHESS[2], col = 'grey60', bg = "#920000", 
+       pch = 21, cex = 3)
+text(x = EHESS[1], y = EHESS[2], col = "blue", font = 2, labels = "EHESS", 
+     adj = c(0.4,-1.25))
+
+```
+
+
+
+## Affichage de fond de cartes dynamique
+Le package `leaflet` permet d'exploiter les fonctionalité de la librairy de cartographie javascript "leaflet" directement à partir de R et d'exporter des cartes interactives.  
+
+```{r, cache=FALSE}
+library(leaflet)
+# initialiser une carte
+m <- leaflet()
+# carte avec emprise mondiale
+m <- addTiles(map = m)
+# centrer sur un point
+m <- setView(map = m, lng = 2.372199, lat = 48.836016, zoom = 18)
+# ajout d'un marqueur
+m <- addMarkers(m, lng = 2.372199, lat = 48.836016, 
+                icon = list(iconUrl = "http://www.ehess.fr/fileadmin/template/images/logo-EHESS.gif", iconWidth = 100, iconHeight = 100))
+# ajout d'un pop-up
+m <- addPopups(map = m, 2.372199, 48.836016, 'Ici se trouve l\'<b>EHESS</b>')
+# affichage de la carte
+m
+```
+
+Les packages `RgoogleMaps, leafletR et rCharts` permettent aussi ce type d'affichage.  
+
+## Geocodage d'adresses
+Il peut arriver de devoir géocoder des adresse, c'est à dire de trouver leurs coordonnées géographiques.
+Cette opération est possible avec le package `ggmap` vu plus haut.
+
+```{r, cache=FALSE}
+# table des points d'intérêt à trouver
+poi <- data.frame(nom = c('EHESS', 
+                          '190ADF', 
+                          'ODG'),
+                  adresses = c("EHESS, Paris", 
+                               '190, avenue de France, Paris', 
+                               'Olympes de Gouges, Paris'), 
+                  stringsAsFactors = F)
+# affichage de la table
+library(DT)
+datatable(poi)
+# recherche des points d'intérêt
+# library(ggmap)
+poigeo <- geocode(poi$adresses, output = "latlona")
+poigeo <- cbind(poi, poigeo)
+# affichage de la table avec les coordonnées
+datatable(poigeo)
+```
+
+```{r, cache = FALSE}
+# affichage des points d'intérêt sur la carte
+osmEHESSwide <- openmap(upperLeft = c(max(poigeo$lat)+0.005,min(poigeo$lon)-0.005), 
+                    lowerRight = c(min(poigeo$lat)-0.005, max(poigeo$lon)+0.005), 
+                    type = "osm")
+# affichage de la carte
+plot(osmEHESSwide)
+EHESS <- projectMercator(lat = poigeo[,"lat"], long = poigeo[,"lon"])
+points(x = EHESS[,1], y = EHESS[,2], col = 'grey60', bg = "#920000", 
+       pch = 21, cex = 3)
+text(x = EHESS[,1], y = EHESS[,2], col = "blue", font = 2, labels = poigeo[,1], 
+     adj = c(0,-1.25))
+
+```
+
+## Routage et matrices de distances
+
+Il est également possible de récupérer les trajets et des temps d'accès entre plusieurs points (avec le package `ggmap`).  
+Plusieurs modes de déplacements sont disponibles (piéton, voiture, vélo...)
+```{r, cache=FALSE}
+# Trajet entre avenue de France et l'EHESS
+AVDF_EHESS <- route(from = as.numeric(poigeo[2,3:4]), 
+                       to =  as.numeric(poigeo[1,3:4]), 
+                       structure = 'leg', 
+                       mode = "bicycling")
+# affichage de la table du trajet
+datatable(AVDF_EHESS)
+
+# Trajet entre avenue de France et Olympe de Gouges
+AVDF_ODG <- route(from = as.numeric(poigeo[2,3:4]), 
+                       to =  as.numeric(poigeo[3,3:4]), 
+                       structure = 'leg', 
+                       mode = "bicycling")
+# affichage de la table du trajet
+datatable(AVDF_ODG)
+
+
+# conversion des coordonnées des points du trajet en mercator
+AVDF_EHESS[, c("startLon", "startLat")] <- projectMercator(lat = AVDF_EHESS[, "startLat"], 
+                                                           long = AVDF_EHESS[, "startLon"])
+AVDF_EHESS[, c("endLon", "endLat")] <- projectMercator(lat = AVDF_EHESS[, "endLat"], 
+                                                       long = AVDF_EHESS[, "endLon"])
+AVDF_ODG[, c("startLon", "startLat")] <- projectMercator(lat = AVDF_ODG[, "startLat"], 
+                                                           long = AVDF_ODG[, "startLon"])
+AVDF_ODG[, c("endLon", "endLat")] <- projectMercator(lat = AVDF_ODG[, "endLat"], 
+                                                       long = AVDF_ODG[, "endLon"])
+
+
+# affichage de la carte
+plot(osmEHESSwide)
+# ajout des trajets
+segments(x0 = AVDF_EHESS$startLon, y0 = AVDF_EHESS$startLat, 
+         x1 = AVDF_EHESS$endLon, y1 =AVDF_EHESS$endLat, 
+         col= 'red', lwd = 3)
+segments(x0 = AVDF_ODG$startLon, y0 = AVDF_ODG$startLat, 
+         x1 = AVDF_ODG$endLon, y1 =AVDF_ODG$endLat, 
+         col= 'blue', lwd = 3)
+# affichage des points
+points(x = EHESS[,1], y = EHESS[,2], col = 'grey60', bg = "#920000", 
+       pch = 21, cex = 3)
+
+```
+
+```{r, cache=FALSE}
+# calcul de distances et temps entre avenue de France et ODG et EHESS
+x <- mapdist(from = poigeo$adress[2], poigeo$adress[c(1,3)], mode = 'bicycling', 
+             output = "simple")
+# affichage de la table des distances
+datatable(x)
+```
+
+# Opérations de géotraitement
+Les opérations de manipulation d'objets géographiques et de géotraitement communes à l'ensemble des SIG sont disponible dans R.   
+Le package `rgdal` permet notamment la gestion des projections géographique.  
+Le package `sp` permet la manipulation des objets spatiaux.  
+Le package `rgeos` donne accès à la librairie d'opérations spatiales `geos`.  
+
+
+Dans ce premier exemple nous sélectionnons simplement les tweets émis de l'intérieur des pays européens.
+```{r, cache=FALSE}
+# import des données
+load("/mnt/data/twitter/data/tweetslight.RData")
+# affichagfe des pays
+par(mar = c(0,0,0,0))
+plot(nuts0.spdf)
+# affichage de tous les tweets
+plot(marseillegeo, add=T, pch = ".", col = "red")
+# intersection des tweets et des pays
+tweetsInNuts0 <- over(x = marseillegeo, y = nuts0.spdf)
+head(tweetsInNuts0)
+tweetsInNuts0$nb <- 1
+# comptage des tweets dans les polygones
+tweetspercountry <- aggregate(x = tweetsInNuts0$nb, 
+                              by = list(tweetsInNuts0$id, tweetsInNuts0$name), 
+                              FUN = sum)
+names(tweetspercountry) <- c("id", "name", "nbtweets")
+datatable(data = tweetspercountry[order(tweetspercountry$nbtweets, decreasing = T),])
+# sélection des tweets localisés à l'intérieur des pays
+marseillegeo <- marseillegeo[!is.na(tweetsInNuts0$id),]
+# affichage des tweets en question
+plot(marseillegeo, add=T, pch = ".", col = "blue")
+```
+
+Dans un deuxième example nous allons créer un maillage haxagonale et compter les tweets par maille.
+```{r, cache=TRUE}
+# création d'une grille de points
+hexapoints <- spsample(x = nuts0.spdf, cellsize = 40000, type = 'hexagonal')
+# transformation en grille de polygones
+hexapoly <- HexPoints2SpatialPolygons(hex = hexapoints)
+datahexa <- data.frame(id = row.names(hexapoly), x = 1)
+row.names(datahexa) <- datahexa$id
+hexapoly <- SpatialPolygonsDataFrame(Sr = hexapoly, data = datahexa)
+# affichage des hexagones
+par(mar = c(0,0,0,0))
+plot(hexapoly)
+# intersection entre les polygones et les tweets
+tweetsInHexaPoly <- over(x = marseillegeo, y = hexapoly)
+# comptage des tweets dans les polygones
+marseilletweethexapoly <- aggregate(x = tweetsInHexaPoly$x, by = list(tweetsInHexaPoly$id), FUN = sum)
+names(marseilletweethexapoly) <- c("id", "n")
+# cartographie des polygones
+df <- data.frame(hexapoly@data, 
+                 marseilletweethexapoly[match(hexapoly@data[, "id"], 
+                                              marseilletweethexapoly[, "id"]),])
+colours <-c("#B8D9A9" ,"#8DBC80" ,"#5D9D52" ,"#287A22" ,"#17692C")
+distr <- c(0,10,100,1000,10000,100000)
+colMap <- colours[(findInterval(df$n,distr,all.inside=TRUE))]
+par(mar = c(0,0,0,0))
+plot(nuts0.spdf, col = "grey60", border = NA)
+plot(hexapoly, col = colMap, border = NA, add=T)
+```
+
+# Lissage Spatial
+
+Le package `SpatialPosition` permet de réaliser des traitements de lissage par potentiels.
+
+L'objectif est ici de calculer et de cartographier l'accessibilité globale aux hôpitaux publics.  
+
+Dans notre exemples nous utiliserons 3 jeux de données spatiales :
+
+- `spatUnits` (polygons) :  les 20 arrondissements parisiens
+- `spatMask` (polygons): le contour de Paris
+- `spatPts` (points): 18 hôpitaux public avec leur capacité (nombre de lits).
+
+
+Ce calcul peut guider un individu particulièrement hypocondriaque dans le choix de sont logement à Paris, mais peut aussi être utiliser dans le choix d'une localisation optimale pour améliorer l'egalité d'accès aux services de santé.
+
+
+```{r, cache=TRUE}
+library(SpatialPosition)
+data(spatData)
+
+# Calcul de l'accessibilité
+globalAccessibility <- stewart(knownpts = spatPts, varname = "Capacite",
+                               typefct = "exponential", span = 800, beta = 3,
+                               resolution = 50, longlat = FALSE, 
+                               mask = spatMask)
+# création d'un raster
+rasterAccessibility <- rasterStewart(x = globalAccessibility, mask = spatMask)
+
+# affichage du raster
+par(mar = c(4,2,2,1))
+
+plotStewart(x = rasterAccessibility, add = FALSE, nclass = 6)
+
+# la fonction retourne également les bornes des classes
+breakValues <- plotStewart(x = rasterAccessibility, add = FALSE, nclass = 6)
+
+# créatioon des lignes de contour
+contLines <- contourStewart(x = rasterAccessibility, breaks = breakValues)
+plot(contLines, add = TRUE)
+plot(spatMask, add = TRUE)
+
+mtext("Accessibilité globale aux hôpitaux publics Parisiens", side = 3,cex = 1.5)
+mtext(text = "Nombre potentiel de lits
+      fonction de la distance: exponentielle, portée = 1 km, beta = 3",
+      side = 1, line = 1)   
+
+
+````
+
+# Quelques ressources en ligne
+* [http://rgeomatic.hypotheses.org/](http://rgeomatic.hypotheses.org/)    
+Carnet de recherche de Timothée Giraud destiné au partage et à la diffusion de plusieurs travaux de géomatique réalisés grâce au logiciel R.  
+* [http://neocarto.hypotheses.org/](http://neocarto.hypotheses.org/)   
+Carnet de recherche de Nicolas Lambert plus généraliste sur la cartographie et les nouvelles technologies liées.
+* [http://elementr.hypotheses.org/](http://elementr.hypotheses.org/)  
+Carnet de recherche du groupe ElementR, les activités de ce groupe consistent à organiser des séances de formation et à produire des matériaux pédagogiques sur l’utilisation du logiciel R en sciences humaines et sociales.  
+* [*Mailing list* R-sig-Geo](https://stat.ethz.ch/mailman/listinfo/r-sig-geo)  
+*Mailing list* dédiée aux discussions sur l'utilisation des packages et données géographiques dans R  
+* [http://www.r-bloggers.com/](http://www.r-bloggers.com/)      
+Agrégateur de blogs sur R, généraliste mais les post géographiques sont assez fréquents.  
+* [Cartographie et Analyse Spatiale avec R](http://wukan.ums-riate.fr/RUSS/PresentationRUSS/)  
+Présentation RUSS de 2014.
