@@ -368,4 +368,6 @@ Carnet de recherche du groupe ElementR, les activités de ce groupe consistent �
 * [http://www.r-bloggers.com/](http://www.r-bloggers.com/)      
 Agrégateur de blogs sur R, généraliste mais les post géographiques sont assez fréquents.  
 * [Cartographie et Analyse Spatiale avec R](http://wukan.ums-riate.fr/RUSS/PresentationRUSS/)  
-Présentation RUSS de 2014.
+Présentation RUSS de 2014.  
+* [Cartographie et Analyse vectorielle avec R](http://neocarto.hypotheses.org/975)  
+Présentation à la journée de conférences et ateliers sur les logiciels libres en géomatique (be-OpenGIS-fr). 
