@@ -1,21 +1,29 @@
 ---
 title: 'Représentation et traitement de l''information géographique avec R : usage
-avancé'
+  avancé'
 author: "Timothée Giraud & Nicolas Lambert"
 date: "21 mai 2015"
 output:
-    html_document:
-        number_sections: yes
-        theme: cerulean
-        toc: yes
+  html_document:
+    number_sections: yes
+    theme: cerulean
+    toc: yes
+  pdf_document:
+    toc: yes
 encoding: UTF-8
 ---
 
 # Utilisation d'API de Cartographie
 
+**ATTENTION**   
+*Il faut bien faire attention aux conditions d'utilisation des différentes API, particulièrement [celles de google](https://developers.google.com/maps/licensing).*
+
+
 ## Affichage de fonds de carte statiques
 
 ### Google Maps
+
+
 #### Le package `ggmap`
 
 Nous utilisons ici le package `ggmap` (reposant lui même sur `ggplot2`).
@@ -256,7 +264,9 @@ Le package `rgeos` donne accès à la librairie d'opérations spatiales `geos`.
 Dans ce premier exemple nous sélectionnons simplement les tweets émis de l'intérieur des pays européens.
 ```{r, cache=FALSE}
 # import des données
-load("/mnt/data/twitter/data/tweetslight.RData")
+datatweet <- url(description = "http://wukan.ums-riate.fr/RUSS/RUSS_2015/tweets.RData")
+load(datatweet)
+
 # affichagfe des pays
 par(mar = c(0,0,0,0))
 plot(nuts0.spdf)
