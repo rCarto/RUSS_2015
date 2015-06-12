@@ -372,7 +372,9 @@ Carnet de recherche de Timothée Giraud destiné au partage et à la diffusion d
 * [http://neocarto.hypotheses.org/](http://neocarto.hypotheses.org/)   
 Carnet de recherche de Nicolas Lambert plus généraliste sur la cartographie et les nouvelles technologies liées.
 * [http://elementr.hypotheses.org/](http://elementr.hypotheses.org/)  
-Carnet de recherche du groupe ElementR, les activités de ce groupe consistent à organiser des séances de formation et à produire des matériaux pédagogiques sur l’utilisation du logiciel R en sciences humaines et sociales.  
+Carnet de recherche du groupe ElementR, les activités de ce groupe consistent à organiser des séances de formation et à produire des matériaux pédagogiques sur l’utilisation du logiciel R en sciences humaines et sociales. 
+* [R et espace. Traitement de l’information géographique](http://framabook.org/16-r-et-espace/)  
+Un irremplaçable support technique pour les utilisateurs de R appliqué à l’analyse de l’information géographique. Ce manuel est disponible en ligne et en format papier, les données et les scripts sont téléchargeables.
 * [*Mailing list* R-sig-Geo](https://stat.ethz.ch/mailman/listinfo/r-sig-geo)  
 *Mailing list* dédiée aux discussions sur l'utilisation des packages et données géographiques dans R  
 * [http://www.r-bloggers.com/](http://www.r-bloggers.com/)      
